@@ -15,6 +15,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\AbstractAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Exception\InvalidArgumentException;
+use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Cache\Traits\RedisProxy;
 
 /**
@@ -90,6 +91,20 @@ class RedisAdapterTest extends AbstractRedisAdapterTest
 
         $redis = RedisAdapter::createConnection('rediss://'.$redisHost.'?lazy=1');
         $this->assertInstanceOf(RedisProxy::class, $redis);
+    }
+
+    public function testSetStringValue()
+    {
+        $redis = AbstractAdapter::createConnection('redis://'.getenv('REDIS_HOST'));
+        $this->assertInstanceOf(\Redis::class, $redis);
+        $pool = new RedisAdapter($redis, str_replace('\\', '.', __CLASS__), 0);
+        $readCache = new Psr16Cache($pool);
+        $writeCache= new Psr16Cache($pool);
+        $key = 'redisAdapter.testSetStringValueKey';
+        for ($i = 0; $i < 2; $i++){
+            $readCache->get($key);
+            $this->assertTrue($writeCache->set($key, 'redisAdapter.testSetStringValue', 300));
+        }
     }
 
     /**
